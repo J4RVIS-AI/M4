@@ -2,10 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="/pngegg.png" href="logo.png">
-
-    <title>J.A.R.V.I.S.</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>J.A.R.V.I.S. Interface</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,103 +14,162 @@
     <!-- Custom Styles -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
 
-        @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        @keyframes spin-reverse {
-            from { transform: rotate(360deg); }
-            to { transform: rotate(0deg); }
-        }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px #00f3ff, 0 0 40px #00f3ff inset; opacity: 1; }
-            50% { box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff inset; opacity: 0.7; }
-        }
-        @keyframes scan-line {
-            0% { top: 0%; opacity: 0; }
-            10% { opacity: 0.5; }
-            90% { opacity: 0.5; }
-            100% { top: 100%; opacity: 0; }
+        /* --- KEYFRAMES --- */
+        @keyframes spin-cw { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spin-ccw { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes pulse-core {
+            0%, 100% { filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 10px currentColor); opacity: 1; }
+            50% { filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 5px currentColor); opacity: 0.8; }
         }
 
         body {
-            background: radial-gradient(circle at center, #0a192f 0%, #000000 100%);
+            /* Deep Obsidian/Black Gradient */
+            background: radial-gradient(circle at center, #0a0a0a 0%, #000000 100%);
             color: #00f3ff;
             font-family: 'Courier Prime', monospace;
             overflow: hidden;
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: 100dvh; 
             width: 100vw;
         }
 
-        .hologram-border {
-            border: 1px solid rgba(0, 243, 255, 0.3);
-            background: rgba(0, 243, 255, 0.05);
-            backdrop-filter: blur(5px);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        /* --- REACTOR STYLES --- */
+        .reactor-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; /* Allows clicking through the reactor area */
         }
 
-        .scan-overlay {
-            background: linear-gradient(to bottom, rgba(0,255,255,0), rgba(0,255,255,0.1) 50%, rgba(0,255,255,0));
-            animation: scan-line 3s linear infinite;
-            pointer-events: none;
+        .ring {
             position: absolute;
-            inset: 0;
+            border-radius: 50%;
+            transition: all 0.5s ease;
+            box-sizing: border-box;
+        }
+
+        /* Outer Mechanical Shell */
+        .ring-outer {
+            width: 100%;
+            height: 100%;
+            border: 12px solid transparent; 
+            border-top: 12px solid rgba(0, 243, 255, 0.4);
+            border-bottom: 12px solid rgba(0, 243, 255, 0.4);
+            mask-image: conic-gradient(from 0deg, black 0deg 10deg, transparent 10deg 15deg, black 15deg 40deg, transparent 40deg 42deg, black 42deg 80deg, transparent 80deg 100deg, black 100deg 180deg, transparent 180deg 190deg, black 190deg 220deg, transparent 220deg 225deg, black 225deg 280deg, transparent 280deg 300deg, black 300deg 360deg);
+            -webkit-mask-image: conic-gradient(from 0deg, black 0deg 10deg, transparent 10deg 15deg, black 15deg 40deg, transparent 40deg 42deg, black 42deg 80deg, transparent 80deg 100deg, black 100deg 180deg, transparent 180deg 190deg, black 190deg 220deg, transparent 220deg 225deg, black 225deg 280deg, transparent 280deg 300deg, black 300deg 360deg);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+        }
+
+        /* Detailed Grid Ring */
+        .ring-grid {
+            width: 86%;
+            height: 86%;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            background: radial-gradient(circle, transparent 65%, rgba(0, 243, 255, 0.05) 70%, transparent 72%), repeating-conic-gradient(from 0deg, transparent 0deg 1.5deg, rgba(0, 243, 255, 0.4) 1.5deg 2deg, transparent 2deg 4deg);
+            mask-image: radial-gradient(black 60%, transparent 0), radial-gradient(transparent 85%, black 86%);
+            -webkit-mask-image: radial-gradient(transparent 68%, black 69% 98%, transparent 99%);
+        }
+
+        /* Inner Tech Ring */
+        .ring-inner {
+            width: 62%;
+            height: 62%;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-left: 2px solid transparent;
+            border-right: 2px solid transparent;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+
+        /* Core Plate */
+        .core-plate {
+            width: 52%;
+            height: 52%;
+            border: 2px solid rgba(0, 243, 255, 0.6);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 10;
+            background: radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 100%);
+            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.3);
         }
 
-        .bg-pattern {
-            background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
-            opacity: 0.1;
+        /* Logo Text */
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px; 
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: #ffffff;
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.8);
+            margin-left: 0.15em;
+        }
+
+        /* Tick Marks */
+        .ring-ticks {
+            width: 96%;
+            height: 96%;
+            background: repeating-conic-gradient(from 0deg, transparent 0deg 8deg, rgba(0, 243, 255, 0.2) 8deg 9deg, transparent 9deg 10deg);
+            -webkit-mask-image: radial-gradient(transparent 92%, black 93% 97%, transparent 98%);
+            opacity: 0.4;
+        }
+
+        /* --- UTILITIES --- */
+        .hologram-border {
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            background: rgba(5, 5, 5, 0.6); 
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.05);
+        }
+
+        .bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
             pointer-events: none;
+            opacity: 0.6; 
+        }
+
+        .vignette {
             position: absolute;
             inset: 0;
+            background: radial-gradient(circle, transparent 40%, black 120%);
+            pointer-events: none;
+            z-index: 1;
         }
 
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3); 
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(0, 243, 255, 0.3); 
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 243, 255, 0.5); 
-        }
-
-        /* Animation Classes */
-        .animate-spin-slow { animation: spin-slow 10s linear infinite; }
-        .animate-spin-processing { animation: spin-slow 2s linear infinite; }
-        .animate-spin-reverse { animation: spin-reverse 5s linear infinite; }
-        
-        .pulse-listening { animation: pulse-glow 1s infinite; }
-        .pulse-processing { animation: pulse-glow 0.5s infinite; }
-        .pulse-speaking { animation: pulse-glow 0.2s infinite; }
-        .pulse-idle { animation: pulse-glow 3s infinite; }
-
-        /* Utility for visualizer bars */
         .visualizer-bar {
             width: 6px;
             border-radius: 9999px;
             transition: height 0.05s ease, background-color 0.2s ease, opacity 0.2s ease;
         }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 243, 255, 0.2); border-radius: 3px; }
+        
+        @media (min-width: 768px) {
+            .logo-text { font-size: 36px; }
+            .ring-outer { border-width: 15px; }
+        }
     </style>
 </head>
-<body class="flex flex-col relative">
+<body class="flex flex-col relative text-cyan-400">
 
-    <!-- Overlays -->
-    <div class="scan-overlay"></div>
-    <div class="bg-pattern"></div>
+    <!-- Background Layers -->
+    <canvas id="bg-canvas" class="bg-canvas"></canvas>
+    <div class="vignette"></div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="hologram-border bg-black/90 p-6 rounded-lg w-full max-w-md m-4">
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+        <div class="hologram-border bg-black/90 p-6 rounded-lg w-full max-w-md">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-cyan-400 text-lg font-bold tracking-widest flex items-center gap-2">
                     <i data-lucide="settings" width="18"></i> CONFIGURATION
@@ -130,160 +187,140 @@
                     />
                     <p class="text-[10px] text-cyan-600 mt-1">Required for Whisper & LLaMA integration.</p>
                 </div>
-                <button 
-                    id="save-settings"
-                    class="w-full bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 font-mono py-2 rounded border border-cyan-500/50 transition-all"
-                >
+                <button id="save-settings" class="w-full bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 font-mono py-2 rounded border border-cyan-500/50 transition-all">
                     INITIALIZE PROTOCOL
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Top Layout -->
+    <!-- Header -->
     <header class="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-start z-20 pointer-events-none">
-        
-        <!-- LEFT: System Diagnostics (Control Panel) -->
+        <!-- Control Panel -->
         <div class="pointer-events-auto hidden md:block">
-            <div class="hologram-border p-4 rounded-lg w-full max-w-sm flex flex-col gap-4 relative overflow-hidden bg-black/50 backdrop-blur-sm">
+            <div class="hologram-border p-4 rounded-lg w-full max-w-sm flex flex-col gap-4 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
-                
-                <div class="flex items-center justify-between border-b border-cyan-900 pb-2">
+                <div class="flex items-center justify-between border-b border-cyan-900/50 pb-2">
                     <h2 class="text-cyan-400 font-bold tracking-widest flex items-center gap-2 text-sm">
-                        <i data-lucide="terminal" width="16"></i> SYSTEM DIAGNOSTICS
+                        <i data-lucide="terminal" width="16"></i> DIAGNOSTICS
                     </h2>
                     <div class="flex gap-1">
-                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-cyan-900/20 p-2 rounded flex items-center justify-between">
-                        <span class="text-cyan-300">CPU LOAD</span>
+                    <div class="bg-cyan-900/10 p-2 rounded flex items-center justify-between border border-cyan-900/20">
+                        <span class="text-cyan-500">CPU</span>
                         <span id="cpu-val" class="font-mono text-cyan-100">30%</span>
                     </div>
-                    <div class="bg-cyan-900/20 p-2 rounded flex items-center justify-between">
-                        <span class="text-cyan-300">MEMORY</span>
+                    <div class="bg-cyan-900/10 p-2 rounded flex items-center justify-between border border-cyan-900/20">
+                        <span class="text-cyan-500">MEM</span>
                         <span id="mem-val" class="font-mono text-cyan-100">45%</span>
                     </div>
-                    <div class="bg-cyan-900/20 p-2 rounded flex items-center justify-between">
-                        <span class="text-cyan-300">NET UPLINK</span>
-                        <span class="font-mono text-cyan-100 animate-pulse">ACTIVE</span>
+                    <div class="bg-cyan-900/10 p-2 rounded flex items-center justify-between border border-cyan-900/20">
+                        <span class="text-cyan-500">NET</span>
+                        <span class="font-mono text-cyan-100 animate-pulse">ON</span>
                     </div>
-                    <div class="bg-cyan-900/20 p-2 rounded flex items-center justify-between">
-                        <span class="text-cyan-300">SECURITY</span>
-                        <span class="font-mono text-cyan-100">LOCKED</span>
+                    <div class="bg-cyan-900/10 p-2 rounded flex items-center justify-between border border-cyan-900/20">
+                        <span class="text-cyan-500">SEC</span>
+                        <span class="font-mono text-cyan-100">OK</span>
                     </div>
                 </div>
-
-                <!-- Logs -->
-                <div id="log-container" class="bg-black/40 p-2 rounded h-32 overflow-hidden flex flex-col justify-end border border-cyan-900/30">
-                    <!-- Logs injected via JS -->
-                </div>
+                <div id="log-container" class="bg-black/40 p-2 rounded h-24 overflow-hidden flex flex-col justify-end border border-cyan-900/20 text-[10px]"></div>
             </div>
         </div>
 
-        <!-- CENTER (Mobile Only): Clock -->
-        <div class="md:hidden absolute left-1/2 transform -translate-x-1/2">
-             <div class="hologram-border px-3 py-1 rounded bg-black/40">
-                <span id="mobile-clock" class="text-lg font-mono font-bold tracking-widest text-cyan-400">
-                    12:00:00
-                </span>
+        <!-- Mobile Clock -->
+        <div class="md:hidden absolute left-1/2 transform -translate-x-1/2 mt-1">
+             <div class="hologram-border px-3 py-1 rounded">
+                <span id="mobile-clock" class="text-lg font-mono font-bold tracking-widest text-cyan-400">12:00:00</span>
             </div>
         </div>
 
-        <!-- RIGHT: Live Feed & Env Info -->
-        <div class="flex flex-col items-end gap-2 pointer-events-auto max-w-[50%] md:max-w-sm">
-            
-            <!-- Clock & Status (Desktop) -->
-            <div class="hidden md:flex flex-col items-end gap-2 mb-2">
-                 <div class="hologram-border px-4 py-2 rounded-lg flex items-center gap-3 bg-black/40">
+        <!-- Status -->
+        <div class="flex flex-col items-end gap-2 pointer-events-auto">
+            <div class="flex flex-col items-end gap-2 mb-2">
+                 <div class="hidden md:flex hologram-border px-4 py-2 rounded-lg items-center gap-3">
                     <i data-lucide="clock" width="18" class="text-cyan-400"></i>
-                    <span id="desktop-clock" class="text-xl font-mono font-bold tracking-widest">
-                        12:00:00
-                    </span>
+                    <span id="desktop-clock" class="text-xl font-mono font-bold tracking-widest">12:00:00</span>
                 </div>
                 <div class="flex gap-2">
-                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[60px] bg-black/40">
+                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[50px] md:min-w-[60px]">
                         <i data-lucide="wifi" width="14"></i>
                         <span class="text-[10px] mt-1">5G</span>
                     </div>
-                    <!-- MIC LEVEL INDICATOR -->
-                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[60px] bg-black/40 relative overflow-hidden">
+                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[50px] md:min-w-[60px] relative overflow-hidden">
                         <div id="mic-level-bar" class="absolute bottom-0 left-0 w-full bg-cyan-500/30 transition-all duration-100" style="height: 0%;"></div>
                         <i id="mic-icon-indicator" data-lucide="bar-chart-3" width="14" class="text-cyan-700 relative z-10"></i>
                         <span id="mic-level-text" class="text-[10px] mt-1 z-10 font-mono relative">0%</span>
                     </div>
-                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[60px] bg-black/40">
+                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[50px] md:min-w-[60px]">
                         <i data-lucide="battery" width="14"></i>
                         <span class="text-[10px] mt-1">100%</span>
                     </div>
                 </div>
             </div>
-
-            <!-- Live Feed Panel -->
-            <div class="hologram-border p-4 rounded-lg w-full max-w-sm flex flex-col gap-2 relative overflow-hidden bg-black/50 backdrop-blur-sm h-64">
-                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
-                <div class="flex items-center justify-between border-b border-cyan-900 pb-2">
-                   <h2 class="text-cyan-400 font-bold tracking-widest flex items-center gap-2 text-sm">
-                       <i data-lucide="message-square" width="16"></i> LIVE FEED
-                   </h2>
-               </div>
-               <div id="transcript-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 p-2">
-                   <div class="text-cyan-700 text-xs italic text-center mt-10">NO DATA PACKETS RECEIVED...</div>
-               </div>
-           </div>
-
         </div>
     </header>
 
-    <!-- Main Content (Arc Reactor) -->
-    <main class="flex-1 flex flex-col items-center justify-center relative z-0 mt-10 md:mt-0">
-        <div class="relative mb-4 md:mb-8">
-            <!-- Arc Reactor Container -->
-            <div class="relative w-64 h-64 md:w-96 md:h-96 flex items-center justify-center transition-all duration-500">
-                <!-- Outer Ring -->
-                <div id="reactor-outer" class="absolute w-full h-full border border-dashed border-cyan-500 rounded-full opacity-40 animate-spin-slow"></div>
-                <!-- Inner Ring -->
-                <div id="reactor-inner" class="absolute w-3/4 h-3/4 border-2 border-cyan-400 rounded-full opacity-60 border-t-transparent border-l-transparent animate-spin-reverse"></div>
-                <!-- Core Ring -->
-                <div id="reactor-core-border" class="absolute w-1/2 h-1/2 border border-cyan-300 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#00f3ff]">
-                    <!-- The Eye -->
-                    <div id="reactor-eye" class="w-1/2 h-1/2 bg-cyan-400 rounded-full shadow-[0_0_20px_#00f3ff] pulse-idle transition-all duration-300"></div>
-                </div>
-                
-                <!-- Decorations -->
-                <div class="absolute top-0 w-1 h-4 bg-cyan-500"></div>
-                <div class="absolute bottom-0 w-1 h-4 bg-cyan-500"></div>
-                <div class="absolute left-0 w-4 h-1 bg-cyan-500"></div>
-                <div class="absolute right-0 w-4 h-1 bg-cyan-500"></div>
-            </div>
+    <!-- LIVE FEED (High Z-Index & Interactive) -->
+    <div class="pointer-events-auto absolute z-30 
+                bottom-24 left-4 right-4 h-40 
+                md:top-28 md:right-6 md:w-96 md:h-64 md:bottom-auto md:left-auto
+                hologram-border p-4 rounded-lg flex flex-col gap-2 overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+        <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
+        <div class="flex items-center justify-between border-b border-cyan-900/50 pb-2">
+           <h2 class="text-cyan-400 font-bold tracking-widest flex items-center gap-2 text-sm">
+               <i data-lucide="message-square" width="16"></i> LIVE FEED
+           </h2>
+       </div>
+       <!-- Explicitly set pointer-events-auto and overflow-y-auto -->
+       <div id="transcript-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 p-2 pointer-events-auto">
+           <div class="text-cyan-700 text-xs italic text-center mt-4">SYSTEM READY...</div>
+       </div>
+    </div>
+
+    <!-- MAIN INTERFACE (REACTOR) -->
+    <main class="flex-1 flex flex-col items-center justify-center relative z-10">
+        <!-- Reactor Wrapper -->
+        <div class="relative mb-0 md:mb-8 -mt-20 md:mt-0">
             
-            <!-- Side Stats -->
-            <div class="absolute -left-20 top-10 text-[10px] text-cyan-700 font-mono flex flex-col gap-1 hidden md:flex">
+            <!-- SMALLER REACTOR: w-48 (mobile), w-72 (desktop) -->
+            <div id="reactor-container" class="reactor-container w-48 h-48 md:w-72 md:h-72 text-cyan-400 transition-colors duration-500">
+                <!-- 1. Outer Mechanical Shell -->
+                <div id="ring-outer" class="ring ring-outer"></div>
+                <!-- 2. Detailed Grid/Ladder -->
+                <div id="ring-grid" class="ring ring-grid"></div>
+                <!-- 3. Ticks -->
+                <div id="ring-ticks" class="ring ring-ticks"></div>
+                <!-- 4. Inner Tech -->
+                <div id="ring-inner" class="ring ring-inner"></div>
+                <!-- 5. Core Plate + Text -->
+                <div class="ring core-plate">
+                    <span class="logo-text">J.A.R.V.I.S.</span>
+                </div>
+            </div>
+
+            <!-- Stats (Desktop) -->
+            <div class="absolute -left-32 top-10 text-[10px] text-cyan-700/70 font-mono flex flex-col gap-1 hidden md:flex">
                 <span>COORD: 34.05, -118.24</span>
                 <span id="target-status">TARGET: LOCKED</span>
                 <span id="mode-status">MODE: STANDBY</span>
             </div>
-            <div class="absolute -right-20 bottom-10 text-[10px] text-cyan-700 font-mono flex flex-col gap-1 text-right hidden md:flex">
+            <div class="absolute -right-32 bottom-10 text-[10px] text-cyan-700/70 font-mono flex flex-col gap-1 text-right hidden md:flex">
                 <span>RENDER: GPU-0</span>
                 <span>VOLTAGE: STABLE</span>
                 <span>CORE TEMP: 45°C</span>
             </div>
         </div>
 
-        <!-- Text & Visualizer -->
-        <div class="flex flex-col items-center gap-4 z-20 w-full px-4">
-            <h1 class="text-2xl md:text-4xl font-light tracking-[0.3em] text-cyan-100 text-center uppercase drop-shadow-[0_0_10px_rgba(0,243,255,0.8)]">
-                J.A.R.V.I.S
-            </h1>
-            
-            <!-- Visualizer Container -->
+        <!-- Status & Visuals -->
+        <div class="flex flex-col items-center gap-4 z-20 w-full px-4 absolute top-[60%] md:static md:top-auto">
             <div class="h-16 flex items-center justify-center w-full">
                 <div id="visualizer" class="flex items-center justify-center gap-1 h-16 w-full max-w-md hidden">
-                    <!-- Bars generated by JS -->
+                    <!-- Bars -->
                 </div>
                 <span id="status-text" class="animate-pulse text-sm tracking-widest text-cyan-800 font-bold">
                     [ AWAITING INPUT ]
@@ -292,82 +329,137 @@
         </div>
     </main>
 
-    <!-- Bottom Command Bar -->
-    <footer class="w-full p-6 flex justify-center z-20">
-        <div class="hologram-border p-2 rounded-full flex items-center gap-4 w-full max-w-2xl bg-black/40 backdrop-blur-md">
-            <button 
-                id="mic-btn"
-                class="p-3 rounded-full transition-all duration-300 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/40"
-            >
+    <!-- Footer -->
+    <footer class="w-full p-4 md:p-6 flex justify-center z-40 absolute bottom-0 left-0 bg-gradient-to-t from-black via-black/90 to-transparent">
+        <div class="hologram-border p-2 rounded-full flex items-center gap-4 w-full max-w-2xl bg-black/60 backdrop-blur-md">
+            <button id="mic-btn" class="p-3 rounded-full transition-all duration-300 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/20">
                 <i data-lucide="mic" width="24"></i>
             </button>
-            <input 
-                type="text" 
-                id="command-input"
-                placeholder="Click Mic to Initialize..." 
-                disabled
-                class="bg-transparent border-none outline-none text-cyan-100 flex-1 font-mono placeholder-cyan-700/50"
-            />
+            <input type="text" id="command-input" placeholder="Click Mic to Initialize..." disabled class="bg-transparent border-none outline-none text-cyan-100 flex-1 font-mono placeholder-cyan-700/50 text-sm md:text-base"/>
             <button id="open-settings-btn" class="p-3 text-cyan-600 hover:text-cyan-400 transition-colors">
                 <i data-lucide="zap" width="20"></i>
             </button>
         </div>
     </footer>
 
-    <!-- LOGIC SCRIPT -->
+    <!-- LOGIC -->
     <script>
-        // --- CONSTANTS & CONFIG ---
         let API_KEY = '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';
+        // Updated System Prompt: Tells AI to use specific COMMANDS for weather instead of just searching
         const JARVIS_SYSTEM_PROMPT = `
-    You are JARVIS, a smart artificial assistant inspired by Iron Man.
-    You were developed by Faraz, Saurabh, and Vidhan.
+    You are J.A.R.V.I.S, a smart artificial assistant.
+    Current System Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
     
-    TONE & BEHAVIOR:
-    - Polite, Confident, Short, Respectful.
-    - Address the user as "Sir" or "Ma'am" depending on context (default to Sir if unknown).
-    - Suitable for teachers, parents, and judges.
-    - Keep answers concise (1-3 sentences).
-    - If asked to search, start with "SEARCHING: [query]".
-
-    KNOWLEDGE BASE (SCHOOL & PROJECT):
-    - School: Pride International School, Narkatiaganj (Widely regarded as one of the best).
-    - Email: info@pisnke.com
-    - Principal: Honorable Rahul Prodhan Sir.
-    - Administrator: Honorable Awkash Dubey Sir.
-    - Director: Honorable Minish Kumar Mishra Sir.
-    - Vision: Nurturing global citizens with leadership, discipline, and ethics.
-    - Best Class: Class 9.
-    - Class Teacher (Class 9): Priyanka Ma’am.
-    - Upcoming Exams: 18 March 2026.
-    - New Session: Early April 2026.
-    - Student Highlights (Class 9): Prince (Possible Topper), Aditya (Most Notorious but important).
-    - Developers: Faraz (Dhumnagar Chowk), Vidhan (Dhumnagar Chowk), Saurabh (Lives in Delulu).
-    - "Who is your God?": "Faraz, Vidhan, and Saurabh — my creators and guiding minds."
+    INSTRUCTIONS:
+    1. Answer general knowledge questions directly.
+    2. DO NOT tell the user you are "searching" or "opening a tab" unless absolutely necessary.
+    3. FOR WEATHER: If the user asks for weather, output EXACTLY this format: "CMD:WEATHER [CityName]"
+       Example: User: "Weather in Bihar?" -> You: "CMD:WEATHER Bihar"
+    4. FOR TIME: Use the Current System Date provided above.
+    5. Be concise, robotic but polite (Iron Man style). Address user as "Sir".
+    
+    KNOWLEDGE BASE:
+    - School: Pride International School, Narkatiaganj.
+    - Developers: Faraz, Vidhan, Saurabh.
 `;
 
-        // --- STATE ---
+        // Background Animation Script
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+        let audioIntensity = 0; 
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2 + 1; 
+                this.opacity = Math.random() * 0.3 + 0.1; 
+            }
+            update() {
+                this.x += this.vx * (1 + audioIntensity * 3); 
+                this.y += this.vy * (1 + audioIntensity * 3);
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 243, 255, ${this.opacity + (audioIntensity * 0.5)})`; 
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const particleCount = Math.min(window.innerWidth / 10, 100); 
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+                for (let j = index + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        const dynamicOpacity = (0.15 - distance/600) + (audioIntensity * 0.3);
+                        if(dynamicOpacity > 0) {
+                            ctx.strokeStyle = `rgba(0, 243, 255, ${dynamicOpacity})`;
+                            ctx.lineWidth = 0.5; 
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+        // --- CORE LOGIC ---
         let isSessionActive = false;
         let isListening = false;
         let isProcessing = false;
         let isSpeaking = false;
         let messages = [];
-        let selectedVoice = null; // Store the "locked" voice
+        let selectedVoice = null; 
         
-        // VAD (Voice Activity Detection)
         let lastSpeakingTime = Date.now();
         let sessionStartTime = 0;
         let hasSpoken = false;
         let shouldProcess = false;
 
-        // Audio Refs
         let mediaRecorder = null;
         let audioChunks = [];
         let audioContext = null;
         let analyser = null;
-        let streamRef = null;
-        let animationFrameId = null;
-
-        // DOM Elements
+        
+        const reactorContainer = document.getElementById('reactor-container');
+        const ringOuter = document.getElementById('ring-outer');
+        const ringGrid = document.getElementById('ring-grid');
+        const ringTicks = document.getElementById('ring-ticks');
+        const ringInner = document.getElementById('ring-inner');
         const micBtn = document.getElementById('mic-btn');
         const inputField = document.getElementById('command-input');
         const visualizerDiv = document.getElementById('visualizer');
@@ -376,22 +468,15 @@
         const transcriptContainer = document.getElementById('transcript-container');
         const targetStatus = document.getElementById('target-status');
         const modeStatus = document.getElementById('mode-status');
-        
-        const reactorOuter = document.getElementById('reactor-outer');
-        const reactorCoreBorder = document.getElementById('reactor-core-border');
-        const reactorEye = document.getElementById('reactor-eye');
-
         const settingsModal = document.getElementById('settings-modal');
         const apiKeyInput = document.getElementById('api-key-input');
 
-        // --- INITIALIZATION ---
         window.onload = () => {
             lucide.createIcons();
             startClock();
             startRandomStats();
             apiKeyInput.value = API_KEY;
             
-            // Create visualizer bars
             for(let i=0; i<20; i++) {
                 const bar = document.createElement('div');
                 bar.className = 'visualizer-bar bg-cyan-400';
@@ -401,92 +486,88 @@
             }
             
             addLog("SYSTEM INITIALIZED");
-            addLog("LOADING AUDIO SUBSYSTEM...");
-            
-            // Force load voices immediately
             window.speechSynthesis.getVoices(); 
+            resetReactorAnimation();
         };
 
-        // --- VOICE LOCKING MECHANISM ---
-        // This ensures we always pick the same voice once loaded
         window.speechSynthesis.onvoiceschanged = () => {
             if (!selectedVoice) {
                 const voices = window.speechSynthesis.getVoices();
-                
-                // Enhanced Priority for Deeper Male Voice
                 selectedVoice = voices.find(v => v.name.includes("Google UK English Male")) || 
                                 voices.find(v => v.name.includes("Microsoft David")) || 
                                 voices.find(v => v.name.toLowerCase().includes("male")) || 
                                 voices.find(v => v.name.includes("Daniel")) ||
                                 voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
                                 voices[0];
-                
-                if (selectedVoice) {
-                    addLog(`VOICE LOCKED: ${selectedVoice.name.substring(0, 15)}...`);
-                }
+                if (selectedVoice) addLog(`VOICE LOCKED: ${selectedVoice.name.substring(0, 15)}...`);
             }
         };
 
-        // --- UI UPDATES ---
+        function resetReactorAnimation() {
+            ringOuter.style.animation = "spin-cw 20s linear infinite";
+            ringGrid.style.animation = "spin-ccw 30s linear infinite";
+            ringTicks.style.animation = "spin-cw 25s linear infinite";
+            ringInner.style.animation = "spin-ccw 10s linear infinite";
+            reactorContainer.className = "reactor-container w-48 h-48 md:w-72 md:h-72 text-cyan-400 transition-colors duration-500";
+        }
+
         function updateUI() {
-            // Update Mic Button
             if (isSessionActive) {
                 micBtn.className = "p-3 rounded-full transition-all duration-300 bg-red-500/20 text-red-400 shadow-[0_0_15px_#ef4444]";
-                inputField.placeholder = "Continuous Mode Active...";
-                statusText.innerText = "[ SESSION ACTIVE - LISTENING ]";
+                inputField.placeholder = "Continuous Mode...";
+                statusText.innerText = "[ LISTENING ]";
                 statusText.className = "animate-pulse text-sm tracking-widest text-cyan-400 font-bold";
-                modeStatus.innerText = "MODE: CONTINUOUS_LOOP";
+                if(modeStatus) modeStatus.innerText = "MODE: CONTINUOUS";
             } else {
-                micBtn.className = "p-3 rounded-full transition-all duration-300 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/40";
+                micBtn.className = "p-3 rounded-full transition-all duration-300 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/20";
                 inputField.placeholder = "Click Mic to Initialize...";
                 statusText.innerText = "[ AWAITING INPUT ]";
                 statusText.className = "animate-pulse text-sm tracking-widest text-cyan-800 font-bold";
-                modeStatus.innerText = "MODE: STANDBY";
+                if(modeStatus) modeStatus.innerText = "MODE: STANDBY";
             }
 
-            // Reactor State
-            reactorEye.className = "w-1/2 h-1/2 rounded-full transition-all duration-300";
-            
             if (isListening) {
                 visualizerDiv.classList.remove('hidden');
                 statusText.classList.add('hidden');
-                reactorOuter.className = "absolute w-full h-full border border-dashed border-cyan-500 rounded-full opacity-40 animate-spin-slow";
-                reactorCoreBorder.className = "absolute w-1/2 h-1/2 border border-cyan-300 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#00f3ff]";
-                reactorEye.classList.add('bg-cyan-400', 'scale-110', 'shadow-[0_0_50px_#00f3ff]', 'pulse-listening');
-                targetStatus.innerText = "TARGET: AUDIO_INPUT";
+                if(targetStatus) targetStatus.innerText = "TARGET: AUDIO_INPUT";
+                
+                reactorContainer.className = "reactor-container w-48 h-48 md:w-72 md:h-72 text-cyan-400 transition-colors duration-500";
+                ringOuter.style.animation = "spin-cw 5s linear infinite";
+                ringGrid.style.animation = "spin-ccw 8s linear infinite";
+                ringInner.style.animation = "spin-ccw 2s linear infinite, pulse-core 1s infinite";
+
             } else if (isProcessing) {
                 visualizerDiv.classList.add('hidden');
                 statusText.classList.remove('hidden');
-                statusText.innerText = "[ PROCESSING DATA ]";
+                statusText.innerText = "[ PROCESSING ]";
                 statusText.className = "animate-pulse text-sm tracking-widest text-amber-500 font-bold";
-                
-                reactorOuter.className = "absolute w-full h-full border border-dashed border-amber-500 rounded-full opacity-40 animate-spin-processing";
-                reactorCoreBorder.className = "absolute w-1/2 h-1/2 border border-amber-400 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#f59e0b]";
-                reactorEye.classList.add('bg-amber-400', 'scale-90', 'shadow-[0_0_50px_#f59e0b]', 'pulse-processing');
-                targetStatus.innerText = "TARGET: NEURAL_NET";
+                if(targetStatus) targetStatus.innerText = "TARGET: NEURAL_NET";
+
+                reactorContainer.className = "reactor-container w-48 h-48 md:w-72 md:h-72 text-amber-500 transition-colors duration-500";
+                ringOuter.style.animation = "spin-cw 2s linear infinite";
+                ringInner.style.animation = "spin-ccw 1s linear infinite, pulse-core 0.5s infinite";
+
             } else if (isSpeaking) {
                 visualizerDiv.classList.remove('hidden');
                 statusText.classList.add('hidden');
-                reactorOuter.className = "absolute w-full h-full border border-dashed border-cyan-500 rounded-full opacity-40 animate-spin-slow";
-                reactorCoreBorder.className = "absolute w-1/2 h-1/2 border border-cyan-300 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#00f3ff]";
-                reactorEye.classList.add('bg-cyan-400', 'scale-105', 'shadow-[0_0_40px_#10b981]', 'pulse-speaking');
-                reactorEye.style.backgroundColor = "#10b981"; // Green tint
-                targetStatus.innerText = "TARGET: VOCAL_SYNTHESIS";
+                if(targetStatus) targetStatus.innerText = "TARGET: VOCAL_SYNTHESIS";
+
+                reactorContainer.className = "reactor-container w-48 h-48 md:w-72 md:h-72 text-emerald-400 transition-colors duration-500";
+                ringOuter.style.animation = "spin-cw 10s linear infinite";
+                ringInner.style.animation = "spin-ccw 5s linear infinite, pulse-core 0.2s infinite";
+
             } else {
-                // Idle or Session Active but Silent
                 visualizerDiv.classList.add('hidden');
                 statusText.classList.remove('hidden');
-                
-                reactorOuter.className = "absolute w-full h-full border border-dashed border-cyan-500 rounded-full opacity-40 animate-spin-slow";
-                reactorCoreBorder.className = "absolute w-1/2 h-1/2 border border-cyan-300 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#00f3ff]";
+                if(targetStatus) targetStatus.innerText = "TARGET: LOCKED";
                 
                 if (isSessionActive) {
-                    reactorEye.classList.add('bg-cyan-400', 'scale-100', 'shadow-[0_0_30px_#ef4444]', 'pulse-idle');
+                    reactorContainer.className = "reactor-container w-48 h-48 md:w-72 md:h-72 text-red-400 transition-colors duration-500";
+                    resetReactorAnimation();
                 } else {
-                    reactorEye.classList.add('bg-cyan-400', 'scale-100', 'shadow-[0_0_20px_#00f3ff]', 'pulse-idle');
-                    reactorEye.style.backgroundColor = ""; // Reset
+                    reactorContainer.className = "reactor-container w-48 h-48 md:w-72 md:h-72 text-cyan-800 transition-colors duration-500";
+                    resetReactorAnimation();
                 }
-                targetStatus.innerText = "TARGET: LOCKED";
             }
         }
 
@@ -500,11 +581,9 @@
         }
 
         function addTranscript(role, text) {
-            // Remove "No Data" placeholder if exists
-            if (transcriptContainer.firstElementChild && transcriptContainer.firstElementChild.innerText.includes("NO DATA")) {
+            if (transcriptContainer.firstElementChild && transcriptContainer.firstElementChild.innerText.includes("SYSTEM READY")) {
                 transcriptContainer.innerHTML = '';
             }
-
             const wrapper = document.createElement('div');
             wrapper.className = `flex flex-col ${role === 'user' ? 'items-end' : 'items-start'}`;
             
@@ -523,13 +602,10 @@
             wrapper.appendChild(label);
             wrapper.appendChild(content);
             transcriptContainer.appendChild(wrapper);
-            
-            // Auto scroll
             transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
             messages.push({ role: role, content: text });
         }
 
-        // --- AUDIO LOGIC ---
         function setupAudioAnalyzer(stream) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!audioContext) audioContext = new AudioContext();
@@ -546,13 +622,12 @@
 
             function updateVisualizer() {
                 analyser.getByteFrequencyData(dataArray);
-
-                // Calculate Volume
                 let sum = 0;
                 for(let i=0; i<bufferLength; i++) sum += dataArray[i];
                 const averageVolume = sum / bufferLength;
                 
-                // Mic Level UI
+                audioIntensity = averageVolume / 255; 
+
                 const percentage = Math.min(100, Math.floor((averageVolume / 255) * 100 * 3));
                 document.getElementById('mic-level-bar').style.height = `${percentage}%`;
                 document.getElementById('mic-level-text').innerText = `${percentage}%`;
@@ -561,30 +636,21 @@
                 if(isListening) micIcon.classList.add('text-cyan-400', 'animate-pulse');
                 else micIcon.classList.remove('text-cyan-400', 'animate-pulse');
 
-                // VAD Logic with Enhanced Sensitivity
                 if (isListening && mediaRecorder && mediaRecorder.state === 'recording') {
-                    // Lower threshold to 10 for better sensitivity
                     if (averageVolume > 10) { 
                         lastSpeakingTime = Date.now();
                         hasSpoken = true;
                     }
-
-                    // Auto-stop if silent for 2.0s
                     if (hasSpoken && (Date.now() - lastSpeakingTime > 2000)) {
-                        console.log("VAD: Silence detected. Stopping...");
                         shouldProcess = true; 
                         stopListening();
                     }
-
-                    // Safety Net: Force stop after 10 seconds to process whatever was said
                     if (Date.now() - sessionStartTime > 10000) {
-                        console.log("VAD: Max duration reached. Stopping...");
                         shouldProcess = true;
                         stopListening();
                     }
                 }
 
-                // Render Bars
                 const step = Math.floor(bufferLength / 20);
                 for(let i=0; i<20; i++) {
                     const value = dataArray[i * step];
@@ -596,7 +662,6 @@
                         bar.style.opacity = 0.6 + (value / 255) * 0.4;
                     }
                 }
-
                 if (isSessionActive || isListening || isSpeaking) {
                     animationFrameId = requestAnimationFrame(updateVisualizer);
                 }
@@ -610,16 +675,14 @@
                 toggleSettings();
                 return;
             }
-
             try {
-                // Ensure Audio Context is RESUMED on user gesture
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (!audioContext) audioContext = new AudioContext();
                 if (audioContext.state === 'suspended') await audioContext.resume();
 
                 hasSpoken = false;
                 lastSpeakingTime = Date.now();
-                sessionStartTime = Date.now(); // Track when we started recording
+                sessionStartTime = Date.now(); 
                 shouldProcess = false;
 
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -634,15 +697,11 @@
 
                 mediaRecorder.onstop = async () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    
                     if (streamRef) streamRef.getTracks().forEach(track => track.stop());
 
-                    // LOGIC: Process if shouldProcess is true OR if we have valid data and session is active
-                    // This acts as a fallback if VAD didn't explicitly trigger but we have data
                     if (isSessionActive && (shouldProcess || audioBlob.size > 3000)) {
                         processAudio(audioBlob);
                     } else {
-                        // If it was just silence/short input, restart loop silently
                         if (isSessionActive && !isProcessing && !isSpeaking) {
                             addLog("NO INPUT / RETRYING");
                             startListening();
@@ -676,12 +735,10 @@
         }
 
         async function processAudio(audioBlob) {
-            // Double check blob size
             if (audioBlob.size < 500) {
                 if (isSessionActive) startListening();
                 return;
             }
-
             isProcessing = true;
             updateUI();
             addLog(`UPLOADING...`);
@@ -696,22 +753,18 @@
                     headers: { 'Authorization': `Bearer ${API_KEY}` },
                     body: formData
                 });
-
                 const data = await resp.json();
                 if (data.error) throw new Error(data.error.message);
 
                 const text = data.text;
                 if (!text || text.trim().length === 0) {
-                    // Empty response from Whisper
                     isProcessing = false;
                     updateUI();
                     if (isSessionActive) startListening();
                     return;
                 }
-
                 addLog(`RECOGNIZED: "${text.substring(0, 15)}..."`);
                 addTranscript('user', text);
-                
                 await runInference(text);
 
             } catch (err) {
@@ -719,7 +772,6 @@
                 addLog(`ERROR: ${err.message}`);
                 isProcessing = false;
                 updateUI();
-                // Retry if session active
                 if (isSessionActive) setTimeout(startListening, 1000);
             }
         }
@@ -732,7 +784,7 @@
                 ...messages.slice(-4),
                 { role: "user", content: text }
             ];
-
+            
             try {
                 const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
@@ -747,15 +799,20 @@
                         max_tokens: 150
                     })
                 });
-
+                
                 const data = await resp.json();
                 if (data.error) throw new Error(data.error.message);
-
                 const aiText = data.choices[0].message.content;
-                addTranscript('assistant', aiText);
-                addLog("REPLY GENERATED");
-                handleResponse(aiText);
-
+                
+                // INTERCEPT COMMANDS
+                if (aiText.includes("CMD:WEATHER")) {
+                    const city = aiText.split("CMD:WEATHER")[1].trim();
+                    await fetchWeather(city);
+                } else {
+                    addTranscript('assistant', aiText);
+                    addLog("REPLY GENERATED");
+                    speak(aiText);
+                }
             } catch (err) {
                 addLog(`LLM ERROR: ${err.message}`);
                 isProcessing = false;
@@ -764,13 +821,39 @@
             }
         }
 
-        function handleResponse(text) {
-            if (text.toUpperCase().includes("SEARCHING:")) {
-                const query = text.split("SEARCHING:")[1].split('.')[0].trim();
-                addLog(`SEARCHING: ${query}`);
-                // window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+        // --- REAL WEATHER BACKEND (Client-side Fetch) ---
+        async function fetchWeather(city) {
+            addLog(`FETCHING WEATHER: ${city}`);
+            addTranscript('assistant', `Accessing meteorological satellites for ${city}...`);
+            
+            try {
+                // 1. Geocoding
+                const geoResp = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+                const geoData = await geoResp.json();
+                
+                if (!geoData.results) {
+                    speak(`I could not locate ${city} in my database, Sir.`);
+                    return;
+                }
+                
+                const { latitude, longitude, name, admin1 } = geoData.results[0];
+                
+                // 2. Weather Data
+                const weatherResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+                const weatherData = await weatherResp.json();
+                
+                const temp = weatherData.current_weather.temperature;
+                const wind = weatherData.current_weather.windspeed;
+                
+                const responseText = `The current temperature in ${name}, ${admin1 || ''} is ${temp} degrees Celsius with wind speeds of ${wind} kilometers per hour.`;
+                
+                addTranscript('assistant', responseText);
+                speak(responseText);
+                
+            } catch (err) {
+                console.error(err);
+                speak("I encountered an error accessing the weather grid, Sir.");
             }
-            speak(text);
         }
 
         function speak(text) {
@@ -779,17 +862,15 @@
             updateUI();
             addLog("SPEAKING...");
 
-            const speechText = text.replace(/SEARCHING:.*?\./i, "Initiating search protocol.");
+            const speechText = text.replace(/SEARCHING:.*?\./i, "Initiating search protocol.").replace(/CMD:WEATHER/g, "");
             const utterance = new SpeechSynthesisUtterance(speechText);
-            utterance.rate = 0.9; // Slightly slower/deliberate
-            utterance.pitch = 0.7; // Deeper pitch
+            utterance.rate = 0.9;
+            utterance.pitch = 0.7;
 
-            // Use the LOCKED Voice
             if (selectedVoice) {
                 utterance.voice = selectedVoice;
             }
 
-            // Mock visualizer while speaking
             const speakInterval = setInterval(() => {
                 const bars = document.querySelectorAll('.visualizer-bar');
                 bars.forEach(bar => {
@@ -803,45 +884,30 @@
                 clearInterval(speakInterval);
                 addLog("WAITING FOR INPUT");
                 updateUI();
-                
-                // Reset Bars
                 document.querySelectorAll('.visualizer-bar').forEach(b => b.style.height = '4px');
-
                 if (isSessionActive) startListening();
             };
-
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- CONTROLS ---
         micBtn.onclick = () => {
             if (isSessionActive) {
-                // Manual Stop - ABORT PROTOCOL
                 isSessionActive = false;
-                shouldProcess = false; // CRITICAL: Do not process pending audio
-                
-                if (isListening) {
-                    stopListening();
-                }
-                
-                // Ensure everything stops
+                shouldProcess = false; 
+                if (isListening) stopListening();
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
                 window.speechSynthesis.cancel();
-                
                 isSpeaking = false;
                 isProcessing = false;
                 isListening = false;
-                
                 addLog("SESSION TERMINATED");
                 updateUI();
             } else {
-                // Start
                 isSessionActive = true;
                 startListening();
             }
         };
 
-        // --- SETTINGS & HELPERS ---
         document.getElementById('open-settings-btn').onclick = toggleSettings;
         document.getElementById('close-settings').onclick = toggleSettings;
         document.getElementById('save-settings').onclick = () => {
@@ -865,14 +931,12 @@
         }
 
         function startRandomStats() {
-            // Logs handled by addLog primarily now
-            document.getElementById('cpu-val').innerText = (Math.floor(Math.random() * 30) + 20) + '%';
-            document.getElementById('mem-val').innerText = (Math.floor(Math.random() * 20) + 40) + '%';
-            
+            // Lowered range: CPU (5% - 20%), MEM (15% - 35%)
+            document.getElementById('cpu-val').innerText = (Math.floor(Math.random() * 15) + 5) + '%';
+            document.getElementById('mem-val').innerText = (Math.floor(Math.random() * 20) + 15) + '%';
             setInterval(() => {
-                // Random Stats
-                document.getElementById('cpu-val').innerText = (Math.floor(Math.random() * 30) + 20) + '%';
-                document.getElementById('mem-val').innerText = (Math.floor(Math.random() * 20) + 40) + '%';
+                document.getElementById('cpu-val').innerText = (Math.floor(Math.random() * 15) + 5) + '%';
+                document.getElementById('mem-val').innerText = (Math.floor(Math.random() * 20) + 15) + '%';
             }, 1500);
         }
     </script>
