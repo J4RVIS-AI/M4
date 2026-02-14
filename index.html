@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="/pngegg.png" href="logo.png">
+
+    <title>J.A.R.V.I.S.</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px #00f3ff, 0 0 40px #00f3ff inset; opacity: 1; }
+            50% { box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff inset; opacity: 0.7; }
+        }
+        @keyframes scan-line {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        body {
+            background: radial-gradient(circle at center, #0a192f 0%, #000000 100%);
+            color: #00f3ff;
+            font-family: 'Courier Prime', monospace;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .hologram-border {
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            background: rgba(0, 243, 255, 0.05);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+
+        .scan-overlay {
+            background: linear-gradient(to bottom, rgba(0,255,255,0), rgba(0,255,255,0.1) 50%, rgba(0,255,255,0));
+            animation: scan-line 3s linear infinite;
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+        }
+
+        .bg-pattern {
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+            opacity: 0.1;
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3); 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 243, 255, 0.3); 
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 243, 255, 0.5); 
+        }
+
+        /* Animation Classes */
+        .animate-spin-slow { animation: spin-slow 10s linear infinite; }
+        .animate-spin-processing { animation: spin-slow 2s linear infinite; }
+        .animate-spin-reverse { animation: spin-reverse 5s linear infinite; }
+        
+        .pulse-listening { animation: pulse-glow 1s infinite; }
+        .pulse-processing { animation: pulse-glow 0.5s infinite; }
+        .pulse-speaking { animation: pulse-glow 0.2s infinite; }
+        .pulse-idle { animation: pulse-glow 3s infinite; }
+
+        /* Utility for visualizer bars */
+        .visualizer-bar {
+            width: 6px;
+            border-radius: 9999px;
+            transition: height 0.05s ease, background-color 0.2s ease, opacity 0.2s ease;
+        }
+    </style>
+</head>
+<body class="flex flex-col relative">
+
+    <!-- Overlays -->
+    <div class="scan-overlay"></div>
+    <div class="bg-pattern"></div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="hologram-border bg-black/90 p-6 rounded-lg w-full max-w-md m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-cyan-400 text-lg font-bold tracking-widest flex items-center gap-2">
+                    <i data-lucide="settings" width="18"></i> CONFIGURATION
+                </h2>
+                <button id="close-settings" class="text-cyan-600 hover:text-cyan-300"><i data-lucide="x" width="18"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-cyan-500 font-mono block mb-1">GROQ API KEY</label>
+                    <input 
+                        type="password" 
+                        id="api-key-input"
+                        placeholder="gsk_..."
+                        class="w-full bg-cyan-900/20 border border-cyan-700/50 rounded p-2 text-cyan-100 font-mono text-sm focus:border-cyan-400 outline-none"
+                    />
+                    <p class="text-[10px] text-cyan-600 mt-1">Required for Whisper & LLaMA integration.</p>
+                </div>
+                <button 
+                    id="save-settings"
+                    class="w-full bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 font-mono py-2 rounded border border-cyan-500/50 transition-all"
+                >
+                    INITIALIZE PROTOCOL
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Layout -->
+    <header class="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-start z-20 pointer-events-none">
+        
+        <!-- LEFT: System Diagnostics (Control Panel) -->
+        <div class="pointer-events-auto hidden md:block">
+            <div class="hologram-border p-4 rounded-lg w-full max-w-sm flex flex-col gap-4 relative overflow-hidden bg-black/50 backdrop-blur-sm">
+                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
+                
+                <div class="flex items-center justify-between border-b border-cyan-900 pb-2">
+                    <h2 class="text-cyan-400 font-bold tracking-widest flex items-center gap-2 text-sm">
+                        <i data-lucide="terminal" width="16"></i> SYSTEM DIAGNOSTICS
+                    </h2>
+                    <div class="flex gap-1">
+                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                        <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-cyan-900/20 p-2 rounded flex items-center justify-between">
+                        <span class="text-cyan-300">CPU LOAD</span>
+                        <span id="cpu-val" class="font-mono text-cyan-100">30%</span>
+                    </div>
+                    <div class="bg-cyan-900/20 p-2 rounded flex items-center justify-between">
+                        <span class="text-cyan-300">MEMORY</span>
+                        <span id="mem-val" class="font-mono text-cyan-100">45%</span>
+                    </div>
+                    <div class="bg-cyan-900/20 p-2 rounded flex items-center justify-between">
+                        <span class="text-cyan-300">NET UPLINK</span>
+                        <span class="font-mono text-cyan-100 animate-pulse">ACTIVE</span>
+                    </div>
+                    <div class="bg-cyan-900/20 p-2 rounded flex items-center justify-between">
+                        <span class="text-cyan-300">SECURITY</span>
+                        <span class="font-mono text-cyan-100">LOCKED</span>
+                    </div>
+                </div>
+
+                <!-- Logs -->
+                <div id="log-container" class="bg-black/40 p-2 rounded h-32 overflow-hidden flex flex-col justify-end border border-cyan-900/30">
+                    <!-- Logs injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER (Mobile Only): Clock -->
+        <div class="md:hidden absolute left-1/2 transform -translate-x-1/2">
+             <div class="hologram-border px-3 py-1 rounded bg-black/40">
+                <span id="mobile-clock" class="text-lg font-mono font-bold tracking-widest text-cyan-400">
+                    12:00:00
+                </span>
+            </div>
+        </div>
+
+        <!-- RIGHT: Live Feed & Env Info -->
+        <div class="flex flex-col items-end gap-2 pointer-events-auto max-w-[50%] md:max-w-sm">
+            
+            <!-- Clock & Status (Desktop) -->
+            <div class="hidden md:flex flex-col items-end gap-2 mb-2">
+                 <div class="hologram-border px-4 py-2 rounded-lg flex items-center gap-3 bg-black/40">
+                    <i data-lucide="clock" width="18" class="text-cyan-400"></i>
+                    <span id="desktop-clock" class="text-xl font-mono font-bold tracking-widest">
+                        12:00:00
+                    </span>
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[60px] bg-black/40">
+                        <i data-lucide="wifi" width="14"></i>
+                        <span class="text-[10px] mt-1">5G</span>
+                    </div>
+                    <!-- MIC LEVEL INDICATOR -->
+                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[60px] bg-black/40 relative overflow-hidden">
+                        <div id="mic-level-bar" class="absolute bottom-0 left-0 w-full bg-cyan-500/30 transition-all duration-100" style="height: 0%;"></div>
+                        <i id="mic-icon-indicator" data-lucide="bar-chart-3" width="14" class="text-cyan-700 relative z-10"></i>
+                        <span id="mic-level-text" class="text-[10px] mt-1 z-10 font-mono relative">0%</span>
+                    </div>
+                    <div class="flex flex-col items-center p-2 hologram-border rounded min-w-[60px] bg-black/40">
+                        <i data-lucide="battery" width="14"></i>
+                        <span class="text-[10px] mt-1">100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Feed Panel -->
+            <div class="hologram-border p-4 rounded-lg w-full max-w-sm flex flex-col gap-2 relative overflow-hidden bg-black/50 backdrop-blur-sm h-64">
+                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
+                <div class="flex items-center justify-between border-b border-cyan-900 pb-2">
+                   <h2 class="text-cyan-400 font-bold tracking-widest flex items-center gap-2 text-sm">
+                       <i data-lucide="message-square" width="16"></i> LIVE FEED
+                   </h2>
+               </div>
+               <div id="transcript-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 p-2">
+                   <div class="text-cyan-700 text-xs italic text-center mt-10">NO DATA PACKETS RECEIVED...</div>
+               </div>
+           </div>
+
+        </div>
+    </header>
+
+    <!-- Main Content (Arc Reactor) -->
+    <main class="flex-1 flex flex-col items-center justify-center relative z-0 mt-10 md:mt-0">
+        <div class="relative mb-4 md:mb-8">
+            <!-- Arc Reactor Container -->
+            <div class="relative w-64 h-64 md:w-96 md:h-96 flex items-center justify-center transition-all duration-500">
+                <!-- Outer Ring -->
+                <div id="reactor-outer" class="absolute w-full h-full border border-dashed border-cyan-500 rounded-full opacity-40 animate-spin-slow"></div>
+                <!-- Inner Ring -->
+                <div id="reactor-inner" class="absolute w-3/4 h-3/4 border-2 border-cyan-400 rounded-full opacity-60 border-t-transparent border-l-transparent animate-spin-reverse"></div>
+                <!-- Core Ring -->
+                <div id="reactor-core-border" class="absolute w-1/2 h-1/2 border border-cyan-300 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#00f3ff]">
+                    <!-- The Eye -->
+                    <div id="reactor-eye" class="w-1/2 h-1/2 bg-cyan-400 rounded-full shadow-[0_0_20px_#00f3ff] pulse-idle transition-all duration-300"></div>
+                </div>
+                
+                <!-- Decorations -->
+                <div class="absolute top-0 w-1 h-4 bg-cyan-500"></div>
+                <div class="absolute bottom-0 w-1 h-4 bg-cyan-500"></div>
+                <div class="absolute left-0 w-4 h-1 bg-cyan-500"></div>
+                <div class="absolute right-0 w-4 h-1 bg-cyan-500"></div>
+            </div>
+            
+            <!-- Side Stats -->
+            <div class="absolute -left-20 top-10 text-[10px] text-cyan-700 font-mono flex flex-col gap-1 hidden md:flex">
+                <span>COORD: 34.05, -118.24</span>
+                <span id="target-status">TARGET: LOCKED</span>
+                <span id="mode-status">MODE: STANDBY</span>
+            </div>
+            <div class="absolute -right-20 bottom-10 text-[10px] text-cyan-700 font-mono flex flex-col gap-1 text-right hidden md:flex">
+                <span>RENDER: GPU-0</span>
+                <span>VOLTAGE: STABLE</span>
+                <span>CORE TEMP: 45°C</span>
+            </div>
+        </div>
+
+        <!-- Text & Visualizer -->
+        <div class="flex flex-col items-center gap-4 z-20 w-full px-4">
+            <h1 class="text-2xl md:text-4xl font-light tracking-[0.3em] text-cyan-100 text-center uppercase drop-shadow-[0_0_10px_rgba(0,243,255,0.8)]">
+                J.A.R.V.I.S
+            </h1>
+            
+            <!-- Visualizer Container -->
+            <div class="h-16 flex items-center justify-center w-full">
+                <div id="visualizer" class="flex items-center justify-center gap-1 h-16 w-full max-w-md hidden">
+                    <!-- Bars generated by JS -->
+                </div>
+                <span id="status-text" class="animate-pulse text-sm tracking-widest text-cyan-800 font-bold">
+                    [ AWAITING INPUT ]
+                </span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Command Bar -->
+    <footer class="w-full p-6 flex justify-center z-20">
+        <div class="hologram-border p-2 rounded-full flex items-center gap-4 w-full max-w-2xl bg-black/40 backdrop-blur-md">
+            <button 
+                id="mic-btn"
+                class="p-3 rounded-full transition-all duration-300 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/40"
+            >
+                <i data-lucide="mic" width="24"></i>
+            </button>
+            <input 
+                type="text" 
+                id="command-input"
+                placeholder="Click Mic to Initialize..." 
+                disabled
+                class="bg-transparent border-none outline-none text-cyan-100 flex-1 font-mono placeholder-cyan-700/50"
+            />
+            <button id="open-settings-btn" class="p-3 text-cyan-600 hover:text-cyan-400 transition-colors">
+                <i data-lucide="zap" width="20"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- LOGIC SCRIPT -->
+    <script>
+        // --- CONSTANTS & CONFIG ---
+        let API_KEY = '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';
+        const JARVIS_SYSTEM_PROMPT = `
+    You are JARVIS, a smart artificial assistant inspired by Iron Man.
+    You were developed by Faraz, Saurabh, and Vidhan.
+    
+    TONE & BEHAVIOR:
+    - Polite, Confident, Short, Respectful.
+    - Address the user as "Sir" or "Ma'am" depending on context (default to Sir if unknown).
+    - Suitable for teachers, parents, and judges.
+    - Keep answers concise (1-3 sentences).
+    - If asked to search, start with "SEARCHING: [query]".
+
+    KNOWLEDGE BASE (SCHOOL & PROJECT):
+    - School: Pride International School, Narkatiaganj (Widely regarded as one of the best).
+    - Email: info@pisnke.com
+    - Principal: Honorable Rahul Prodhan Sir.
+    - Administrator: Honorable Awkash Dubey Sir.
+    - Director: Honorable Minish Kumar Mishra Sir.
+    - Vision: Nurturing global citizens with leadership, discipline, and ethics.
+    - Best Class: Class 9.
+    - Class Teacher (Class 9): Priyanka Ma’am.
+    - Upcoming Exams: 18 March 2026.
+    - New Session: Early April 2026.
+    - Student Highlights (Class 9): Prince (Possible Topper), Aditya (Most Notorious but important).
+    - Developers: Faraz (Dhumnagar Chowk), Vidhan (Dhumnagar Chowk), Saurabh (Lives in Delulu).
+    - "Who is your God?": "Faraz, Vidhan, and Saurabh — my creators and guiding minds."
+`;
+
+        // --- STATE ---
+        let isSessionActive = false;
+        let isListening = false;
+        let isProcessing = false;
+        let isSpeaking = false;
+        let messages = [];
+        let selectedVoice = null; // Store the "locked" voice
+        
+        // VAD (Voice Activity Detection)
+        let lastSpeakingTime = Date.now();
+        let sessionStartTime = 0;
+        let hasSpoken = false;
+        let shouldProcess = false;
+
+        // Audio Refs
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let audioContext = null;
+        let analyser = null;
+        let streamRef = null;
+        let animationFrameId = null;
+
+        // DOM Elements
+        const micBtn = document.getElementById('mic-btn');
+        const inputField = document.getElementById('command-input');
+        const visualizerDiv = document.getElementById('visualizer');
+        const statusText = document.getElementById('status-text');
+        const logContainer = document.getElementById('log-container');
+        const transcriptContainer = document.getElementById('transcript-container');
+        const targetStatus = document.getElementById('target-status');
+        const modeStatus = document.getElementById('mode-status');
+        
+        const reactorOuter = document.getElementById('reactor-outer');
+        const reactorCoreBorder = document.getElementById('reactor-core-border');
+        const reactorEye = document.getElementById('reactor-eye');
+
+        const settingsModal = document.getElementById('settings-modal');
+        const apiKeyInput = document.getElementById('api-key-input');
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            lucide.createIcons();
+            startClock();
+            startRandomStats();
+            apiKeyInput.value = API_KEY;
+            
+            // Create visualizer bars
+            for(let i=0; i<20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'visualizer-bar bg-cyan-400';
+                bar.style.height = '4px';
+                bar.id = `bar-${i}`;
+                visualizerDiv.appendChild(bar);
+            }
+            
+            addLog("SYSTEM INITIALIZED");
+            addLog("LOADING AUDIO SUBSYSTEM...");
+            
+            // Force load voices immediately
+            window.speechSynthesis.getVoices(); 
+        };
+
+        // --- VOICE LOCKING MECHANISM ---
+        // This ensures we always pick the same voice once loaded
+        window.speechSynthesis.onvoiceschanged = () => {
+            if (!selectedVoice) {
+                const voices = window.speechSynthesis.getVoices();
+                
+                // Enhanced Priority for Deeper Male Voice
+                selectedVoice = voices.find(v => v.name.includes("Google UK English Male")) || 
+                                voices.find(v => v.name.includes("Microsoft David")) || 
+                                voices.find(v => v.name.toLowerCase().includes("male")) || 
+                                voices.find(v => v.name.includes("Daniel")) ||
+                                voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
+                                voices[0];
+                
+                if (selectedVoice) {
+                    addLog(`VOICE LOCKED: ${selectedVoice.name.substring(0, 15)}...`);
+                }
+            }
+        };
+
+        // --- UI UPDATES ---
+        function updateUI() {
+            // Update Mic Button
+            if (isSessionActive) {
+                micBtn.className = "p-3 rounded-full transition-all duration-300 bg-red-500/20 text-red-400 shadow-[0_0_15px_#ef4444]";
+                inputField.placeholder = "Continuous Mode Active...";
+                statusText.innerText = "[ SESSION ACTIVE - LISTENING ]";
+                statusText.className = "animate-pulse text-sm tracking-widest text-cyan-400 font-bold";
+                modeStatus.innerText = "MODE: CONTINUOUS_LOOP";
+            } else {
+                micBtn.className = "p-3 rounded-full transition-all duration-300 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/40";
+                inputField.placeholder = "Click Mic to Initialize...";
+                statusText.innerText = "[ AWAITING INPUT ]";
+                statusText.className = "animate-pulse text-sm tracking-widest text-cyan-800 font-bold";
+                modeStatus.innerText = "MODE: STANDBY";
+            }
+
+            // Reactor State
+            reactorEye.className = "w-1/2 h-1/2 rounded-full transition-all duration-300";
+            
+            if (isListening) {
+                visualizerDiv.classList.remove('hidden');
+                statusText.classList.add('hidden');
+                reactorOuter.className = "absolute w-full h-full border border-dashed border-cyan-500 rounded-full opacity-40 animate-spin-slow";
+                reactorCoreBorder.className = "absolute w-1/2 h-1/2 border border-cyan-300 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#00f3ff]";
+                reactorEye.classList.add('bg-cyan-400', 'scale-110', 'shadow-[0_0_50px_#00f3ff]', 'pulse-listening');
+                targetStatus.innerText = "TARGET: AUDIO_INPUT";
+            } else if (isProcessing) {
+                visualizerDiv.classList.add('hidden');
+                statusText.classList.remove('hidden');
+                statusText.innerText = "[ PROCESSING DATA ]";
+                statusText.className = "animate-pulse text-sm tracking-widest text-amber-500 font-bold";
+                
+                reactorOuter.className = "absolute w-full h-full border border-dashed border-amber-500 rounded-full opacity-40 animate-spin-processing";
+                reactorCoreBorder.className = "absolute w-1/2 h-1/2 border border-amber-400 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#f59e0b]";
+                reactorEye.classList.add('bg-amber-400', 'scale-90', 'shadow-[0_0_50px_#f59e0b]', 'pulse-processing');
+                targetStatus.innerText = "TARGET: NEURAL_NET";
+            } else if (isSpeaking) {
+                visualizerDiv.classList.remove('hidden');
+                statusText.classList.add('hidden');
+                reactorOuter.className = "absolute w-full h-full border border-dashed border-cyan-500 rounded-full opacity-40 animate-spin-slow";
+                reactorCoreBorder.className = "absolute w-1/2 h-1/2 border border-cyan-300 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#00f3ff]";
+                reactorEye.classList.add('bg-cyan-400', 'scale-105', 'shadow-[0_0_40px_#10b981]', 'pulse-speaking');
+                reactorEye.style.backgroundColor = "#10b981"; // Green tint
+                targetStatus.innerText = "TARGET: VOCAL_SYNTHESIS";
+            } else {
+                // Idle or Session Active but Silent
+                visualizerDiv.classList.add('hidden');
+                statusText.classList.remove('hidden');
+                
+                reactorOuter.className = "absolute w-full h-full border border-dashed border-cyan-500 rounded-full opacity-40 animate-spin-slow";
+                reactorCoreBorder.className = "absolute w-1/2 h-1/2 border border-cyan-300 rounded-full opacity-80 flex items-center justify-center shadow-[0_0_30px_#00f3ff]";
+                
+                if (isSessionActive) {
+                    reactorEye.classList.add('bg-cyan-400', 'scale-100', 'shadow-[0_0_30px_#ef4444]', 'pulse-idle');
+                } else {
+                    reactorEye.classList.add('bg-cyan-400', 'scale-100', 'shadow-[0_0_20px_#00f3ff]', 'pulse-idle');
+                    reactorEye.style.backgroundColor = ""; // Reset
+                }
+                targetStatus.innerText = "TARGET: LOCKED";
+            }
+        }
+
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            const logLine = document.createElement('div');
+            logLine.className = "text-[10px] font-mono text-cyan-500/80 whitespace-nowrap overflow-hidden text-ellipsis px-1";
+            logLine.innerText = `[${time}] >> ${msg}`;
+            logContainer.prepend(logLine);
+            if(logContainer.children.length > 8) logContainer.lastChild.remove();
+        }
+
+        function addTranscript(role, text) {
+            // Remove "No Data" placeholder if exists
+            if (transcriptContainer.firstElementChild && transcriptContainer.firstElementChild.innerText.includes("NO DATA")) {
+                transcriptContainer.innerHTML = '';
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex flex-col ${role === 'user' ? 'items-end' : 'items-start'}`;
+            
+            const label = document.createElement('span');
+            label.className = "text-[10px] text-cyan-600 mb-0.5 uppercase tracking-wider";
+            label.innerText = role === 'user' ? 'COMMAND' : 'RESPONSE';
+            
+            const content = document.createElement('div');
+            content.className = `text-xs font-mono p-2 rounded border ${
+                role === 'user' 
+                ? 'border-cyan-500/30 bg-cyan-900/20 text-cyan-100' 
+                : 'border-emerald-500/30 bg-emerald-900/10 text-emerald-100'
+            }`;
+            content.innerText = text;
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(content);
+            transcriptContainer.appendChild(wrapper);
+            
+            // Auto scroll
+            transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+            messages.push({ role: role, content: text });
+        }
+
+        // --- AUDIO LOGIC ---
+        function setupAudioAnalyzer(stream) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!audioContext) audioContext = new AudioContext();
+            else if (audioContext.state === 'suspended') audioContext.resume();
+
+            const source = audioContext.createMediaStreamSource(stream);
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 64;
+            analyser.smoothingTimeConstant = 0.5;
+            source.connect(analyser);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function updateVisualizer() {
+                analyser.getByteFrequencyData(dataArray);
+
+                // Calculate Volume
+                let sum = 0;
+                for(let i=0; i<bufferLength; i++) sum += dataArray[i];
+                const averageVolume = sum / bufferLength;
+                
+                // Mic Level UI
+                const percentage = Math.min(100, Math.floor((averageVolume / 255) * 100 * 3));
+                document.getElementById('mic-level-bar').style.height = `${percentage}%`;
+                document.getElementById('mic-level-text').innerText = `${percentage}%`;
+                
+                const micIcon = document.getElementById('mic-icon-indicator');
+                if(isListening) micIcon.classList.add('text-cyan-400', 'animate-pulse');
+                else micIcon.classList.remove('text-cyan-400', 'animate-pulse');
+
+                // VAD Logic with Enhanced Sensitivity
+                if (isListening && mediaRecorder && mediaRecorder.state === 'recording') {
+                    // Lower threshold to 10 for better sensitivity
+                    if (averageVolume > 10) { 
+                        lastSpeakingTime = Date.now();
+                        hasSpoken = true;
+                    }
+
+                    // Auto-stop if silent for 2.0s
+                    if (hasSpoken && (Date.now() - lastSpeakingTime > 2000)) {
+                        console.log("VAD: Silence detected. Stopping...");
+                        shouldProcess = true; 
+                        stopListening();
+                    }
+
+                    // Safety Net: Force stop after 10 seconds to process whatever was said
+                    if (Date.now() - sessionStartTime > 10000) {
+                        console.log("VAD: Max duration reached. Stopping...");
+                        shouldProcess = true;
+                        stopListening();
+                    }
+                }
+
+                // Render Bars
+                const step = Math.floor(bufferLength / 20);
+                for(let i=0; i<20; i++) {
+                    const value = dataArray[i * step];
+                    const bar = document.getElementById(`bar-${i}`);
+                    if(bar) {
+                        const h = Math.max(4, value / 2);
+                        bar.style.height = `${h}px`;
+                        bar.style.backgroundColor = isSpeaking ? '#10b981' : '#22d3ee';
+                        bar.style.opacity = 0.6 + (value / 255) * 0.4;
+                    }
+                }
+
+                if (isSessionActive || isListening || isSpeaking) {
+                    animationFrameId = requestAnimationFrame(updateVisualizer);
+                }
+            }
+            updateVisualizer();
+        }
+
+        async function startListening() {
+            if (!API_KEY) {
+                addLog("ERROR: API KEY MISSING");
+                toggleSettings();
+                return;
+            }
+
+            try {
+                // Ensure Audio Context is RESUMED on user gesture
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!audioContext) audioContext = new AudioContext();
+                if (audioContext.state === 'suspended') await audioContext.resume();
+
+                hasSpoken = false;
+                lastSpeakingTime = Date.now();
+                sessionStartTime = Date.now(); // Track when we started recording
+                shouldProcess = false;
+
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                streamRef = stream;
+
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    
+                    if (streamRef) streamRef.getTracks().forEach(track => track.stop());
+
+                    // LOGIC: Process if shouldProcess is true OR if we have valid data and session is active
+                    // This acts as a fallback if VAD didn't explicitly trigger but we have data
+                    if (isSessionActive && (shouldProcess || audioBlob.size > 3000)) {
+                        processAudio(audioBlob);
+                    } else {
+                        // If it was just silence/short input, restart loop silently
+                        if (isSessionActive && !isProcessing && !isSpeaking) {
+                            addLog("NO INPUT / RETRYING");
+                            startListening();
+                        } else {
+                            if (!isSessionActive) addLog("SESSION ENDED");
+                        }
+                    }
+                };
+
+                setupAudioAnalyzer(stream);
+                mediaRecorder.start(100);
+                isListening = true;
+                addLog("LISTENING ACTIVE");
+                updateUI();
+
+            } catch (err) {
+                console.error(err);
+                addLog("AUDIO ERROR: " + err.message);
+                isSessionActive = false;
+                updateUI();
+            }
+        }
+
+        function stopListening() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                isListening = false;
+                addLog("ANALYZING AUDIO...");
+                updateUI();
+            }
+        }
+
+        async function processAudio(audioBlob) {
+            // Double check blob size
+            if (audioBlob.size < 500) {
+                if (isSessionActive) startListening();
+                return;
+            }
+
+            isProcessing = true;
+            updateUI();
+            addLog(`UPLOADING...`);
+
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'input.wav');
+            formData.append('model', 'whisper-large-v3-turbo');
+
+            try {
+                const resp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${API_KEY}` },
+                    body: formData
+                });
+
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error.message);
+
+                const text = data.text;
+                if (!text || text.trim().length === 0) {
+                    // Empty response from Whisper
+                    isProcessing = false;
+                    updateUI();
+                    if (isSessionActive) startListening();
+                    return;
+                }
+
+                addLog(`RECOGNIZED: "${text.substring(0, 15)}..."`);
+                addTranscript('user', text);
+                
+                await runInference(text);
+
+            } catch (err) {
+                console.error(err);
+                addLog(`ERROR: ${err.message}`);
+                isProcessing = false;
+                updateUI();
+                // Retry if session active
+                if (isSessionActive) setTimeout(startListening, 1000);
+            }
+        }
+
+        async function runInference(text) {
+            addLog("PROCESSING REQUEST...");
+            
+            const apiMessages = [
+                { role: "system", content: JARVIS_SYSTEM_PROMPT },
+                ...messages.slice(-4),
+                { role: "user", content: text }
+            ];
+
+            try {
+                const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: apiMessages,
+                        model: "llama-3.1-8b-instant",
+                        temperature: 0.7,
+                        max_tokens: 150
+                    })
+                });
+
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error.message);
+
+                const aiText = data.choices[0].message.content;
+                addTranscript('assistant', aiText);
+                addLog("REPLY GENERATED");
+                handleResponse(aiText);
+
+            } catch (err) {
+                addLog(`LLM ERROR: ${err.message}`);
+                isProcessing = false;
+                updateUI();
+                if (isSessionActive) setTimeout(startListening, 1000);
+            }
+        }
+
+        function handleResponse(text) {
+            if (text.toUpperCase().includes("SEARCHING:")) {
+                const query = text.split("SEARCHING:")[1].split('.')[0].trim();
+                addLog(`SEARCHING: ${query}`);
+                // window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+            }
+            speak(text);
+        }
+
+        function speak(text) {
+            isProcessing = false;
+            isSpeaking = true;
+            updateUI();
+            addLog("SPEAKING...");
+
+            const speechText = text.replace(/SEARCHING:.*?\./i, "Initiating search protocol.");
+            const utterance = new SpeechSynthesisUtterance(speechText);
+            utterance.rate = 0.9; // Slightly slower/deliberate
+            utterance.pitch = 0.7; // Deeper pitch
+
+            // Use the LOCKED Voice
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+
+            // Mock visualizer while speaking
+            const speakInterval = setInterval(() => {
+                const bars = document.querySelectorAll('.visualizer-bar');
+                bars.forEach(bar => {
+                    const h = Math.random() * 20 + 4;
+                    bar.style.height = `${h}px`;
+                });
+            }, 100);
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                clearInterval(speakInterval);
+                addLog("WAITING FOR INPUT");
+                updateUI();
+                
+                // Reset Bars
+                document.querySelectorAll('.visualizer-bar').forEach(b => b.style.height = '4px');
+
+                if (isSessionActive) startListening();
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- CONTROLS ---
+        micBtn.onclick = () => {
+            if (isSessionActive) {
+                // Manual Stop - ABORT PROTOCOL
+                isSessionActive = false;
+                shouldProcess = false; // CRITICAL: Do not process pending audio
+                
+                if (isListening) {
+                    stopListening();
+                }
+                
+                // Ensure everything stops
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+                window.speechSynthesis.cancel();
+                
+                isSpeaking = false;
+                isProcessing = false;
+                isListening = false;
+                
+                addLog("SESSION TERMINATED");
+                updateUI();
+            } else {
+                // Start
+                isSessionActive = true;
+                startListening();
+            }
+        };
+
+        // --- SETTINGS & HELPERS ---
+        document.getElementById('open-settings-btn').onclick = toggleSettings;
+        document.getElementById('close-settings').onclick = toggleSettings;
+        document.getElementById('save-settings').onclick = () => {
+            API_KEY = apiKeyInput.value;
+            localStorage.setItem('jarvis_groq_key', API_KEY);
+            toggleSettings();
+            addLog("KEY UPDATED");
+        };
+
+        function toggleSettings() {
+            settingsModal.classList.toggle('hidden');
+        }
+
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour12: false });
+                document.getElementById('desktop-clock').innerText = timeStr;
+                document.getElementById('mobile-clock').innerText = timeStr;
+            }, 1000);
+        }
+
+        function startRandomStats() {
+            // Logs handled by addLog primarily now
+            document.getElementById('cpu-val').innerText = (Math.floor(Math.random() * 30) + 20) + '%';
+            document.getElementById('mem-val').innerText = (Math.floor(Math.random() * 20) + 40) + '%';
+            
+            setInterval(() => {
+                // Random Stats
+                document.getElementById('cpu-val').innerText = (Math.floor(Math.random() * 30) + 20) + '%';
+                document.getElementById('mem-val').innerText = (Math.floor(Math.random() * 20) + 40) + '%';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
