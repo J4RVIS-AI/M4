@@ -862,8 +862,8 @@
             if (!text) return "";
             let norm = text;
             
-            // Fix "Jarvis" variations
-            norm = norm.replace(/\b(hrvs|hr was|hr is|jervis|travis|chavez|garbage)\b/gi, "Jarvis");
+            // Fix "Jarvis" variations (Added Jarvez, Charis)
+            norm = norm.replace(/\b(hrvs|hr was|hr is|jervis|travis|chavez|garbage|jarvez|charis)\b/gi, "Jarvis");
             
             // Fix "Pride" variations in context
             norm = norm.replace(/\b(freud and|freud|bride|fried|pride and)\b/gi, "Pride");
