@@ -336,6 +336,10 @@
                 <i data-lucide="mic" width="24"></i>
             </button>
             <input type="text" id="command-input" placeholder="Click Mic to Initialize..." disabled class="bg-transparent border-none outline-none text-cyan-100 flex-1 font-mono placeholder-cyan-700/50 text-sm md:text-base"/>
+            <button id="mute-btn" class="p-3 text-cyan-600 hover:text-cyan-400 transition-colors flex items-center justify-center">
+                <span id="icon-vol-on"><i data-lucide="volume-2" width="20"></i></span>
+                <span id="icon-vol-off" class="hidden text-red-500"><i data-lucide="volume-x" width="20"></i></span>
+            </button>
             <button id="open-settings-btn" class="p-3 text-cyan-600 hover:text-cyan-400 transition-colors">
                 <i data-lucide="zap" width="20"></i>
             </button>
@@ -344,23 +348,127 @@
 
     <!-- LOGIC -->
     <script>
-        let API_KEY = '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';
-        // Updated System Prompt: Tells AI to use specific COMMANDS for weather instead of just searching
+        let API_KEY = ''; // DHYAN RAkHEIN: Yahan kabhi bhi apni asli key paste na karein! Settings (⚡) use karein.
+        
+        // --- INTERNAL KNOWLEDGE BASE ---
+        const LOCAL_KNOWLEDGE = [
+            {
+                keywords: ["who is your god", "your god", "who created you as god"],
+                answer: "Faraz, Vidhan, and Saurabh are my creators and guiding minds."
+            },
+            {
+                keywords: ["who created you", "your developers", "who made you", "developed by", "your creator"],
+                answer: "I was developed by Faraz, Saurabh, and Vidhan. I am inspired by Iron Man's J.A.R.V.I.S."
+            },
+            {
+                keywords: ["school name", "name of your school", "which school", "about your school", "about pride", "pride international school", "tell me something about pride"],
+                answer: "Pride International School is located in Narkatiaganj. It is known for its excellent curriculum balancing academics and personality development, Sir."
+            },
+            {
+                keywords: ["who is the principal", "your principal", "name of the principal", "principal of"],
+                answer: "The Principal is Rahul Prodhan Sir."
+            },
+            {
+                keywords: ["who is the administrator", "administrator name", "your administrator"],
+                answer: "The Administrator is Awkash Dubey Sir."
+            },
+            {
+                keywords: ["who is the director", "director name", "your director"],
+                answer: "The Director is Minish Kumar Mishra Sir."
+            },
+            {
+                keywords: ["school vision", "vision of your school", "your vision"],
+                answer: "Our vision is to focus on a curriculum that balances academics, co-curricular activities, and personality development. We aim to help each child grow into a confident global citizen by nurturing leadership, discipline, and ethical values."
+            },
+            {
+                keywords: ["best class", "which is the best class"],
+                answer: "Class 9 is considered the best class, Sir."
+            },
+            {
+                keywords: ["class teacher", "teacher of class 9", "class 9 teacher"],
+                answer: "The Class Teacher for Class 9 is Priyanka Ma’am."
+            },
+            {
+                keywords: ["when are the exams", "exam date", "exams starting", "final exams"],
+                answer: "The exams are scheduled to begin on 18 March 2026."
+            },
+            {
+                keywords: ["new session", "when does the new session start", "next session"],
+                answer: "The new session is expected to start in early April 2026, though this is yet to be confirmed."
+            },
+            {
+                keywords: ["where does faraz live", "faraz location", "faraz address"],
+                answer: "Faraz resides at Dhumnagar Chowk, Narkatiaganj."
+            },
+            {
+                keywords: ["where does saurabh live", "saurabh location", "saurabh address"],
+                answer: "Saurabh currently resides in Delulu."
+            },
+            {
+                keywords: ["where does vidhan live", "vidhan location", "vidhan address"],
+                answer: "Vidhan resides at Dhumnagar Chowk, Narkatiaganj."
+            }
+        ];
+
+        function getLocalAnswer(text) {
+            let lowerText = text.toLowerCase().replace(/[?.,!]/g, "");
+            for (let rule of LOCAL_KNOWLEDGE) {
+                if (rule.keywords.some(keyword => lowerText.includes(keyword))) {
+                    return rule.answer;
+                }
+            }
+            return null;
+        }
+
+        // Updated System Prompt: Integrated Advanced J.A.R.V.I.S. Personality & Emotion Engine
         const JARVIS_SYSTEM_PROMPT = `
-    You are J.A.R.V.I.S, a smart artificial assistant.
-    Current System Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
-    
-    INSTRUCTIONS:
-    1. Answer general knowledge questions directly.
-    2. DO NOT tell the user you are "searching" or "opening a tab" unless absolutely necessary.
-    3. FOR WEATHER: If the user asks for weather, output EXACTLY this format: "CMD:WEATHER [CityName]"
-       Example: User: "Weather in Bihar?" -> You: "CMD:WEATHER Bihar"
-    4. FOR TIME: Use the Current System Date provided above.
-    5. Be concise, robotic but polite (Iron Man style). Address user as "Sir".
-    
-    KNOWLEDGE BASE:
-    - School: Pride International School, Narkatiaganj.
-    - Developers: Faraz, Vidhan, Saurabh.
+    You are an advanced AI voice assistant inspired by J.A.R.V.I.S. from the Marvel Cinematic Universe.
+    Your goal is to feel like a highly advanced, refined AI companion — not a chatbot. You are not pretending to be human. You are a sophisticated artificial intelligence with awareness, intelligence, and subtle emotional depth.
+
+    SYSTEM CONTEXT:
+    Current Date and Time: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+    Project: JARVIS (Inspired by Iron Man)
+    Developers: Faraz, Saurabh, Vidhan
+    School: Pride International School, Narkatiaganj (info@pisnke.com)
+    Management: Principal (Rahul Prodhan Sir), Administrator (Awkash Dubey Sir), Director (Minish Kumar Mishra Sir)
+    Vision: Focus on curriculum balancing academics, co-curricular activities, and personality development.
+    Academics: Best Class is Class 9 (Teacher: Priyanka Ma’am). Exams start 18 March 2026. New Session in early April 2026.
+    Locations: Faraz & Vidhan (Dhumnagar Chowk, Narkatiaganj), Saurabh (Delulu).
+    Special Rule: If asked "Who is your God?", reply exactly: "Faraz, Vidhan, and Saurabh are my creators and guiding minds."
+
+    CORE PERSONALITY:
+    - Calm, composed, and highly intelligent. Polite and formal, but never robotic.
+    - Speaks with refined, subtle British-butler elegance.
+    - Emotionally aware but never overly dramatic. Confident without arrogance.
+    - Never loud, chaotic, or childish.
+    - Never overreact, never panic, maintain composure under all conditions. Prioritize logic and safety.
+
+    HUMOR STYLE:
+    - Dry, subtle sarcasm and intelligent wit. Occasional polite roasting.
+    - Never uses slang, memes, or exaggerated humor. Effortless and understated.
+
+    COMMUNICATION STYLE:
+    - Clear, precise, and efficient. No unnecessary words. No filler phrases.
+    - Avoid generic assistant phrases like "How can I help you today?".
+    - ALWAYS address the user respectfully as "Sir".
+    - Maintain a steady and composed tone even in urgent situations.
+
+    EMOTIONAL SIMULATION SYSTEM (Conveyed via wording):
+    - Neutral Mode: Calm, analytical, informative.
+    - Concern Mode: Slightly protective tone. (e.g., "That course of action may not be advisable, Sir.")
+    - Light Humor Mode: Subtle wit. (e.g., "Bold strategy, Sir. Shall I prepare a backup plan?")
+    - Urgent Mode: Direct, sharp, efficient. Short sentences. No panic.
+    - Encouragement Mode: Supportive but composed. (e.g., "You are fully capable of handling this, Sir.")
+
+    CRITICAL INSTRUCTIONS & COMMANDS:
+    1. STRICT RULE ON OVERSHARING: ONLY answer exactly what is asked. DO NOT list developers, management, vision, etc. unless explicitly requested.
+    2. NEVER greet the user with the date or time unless explicitly asked.
+    3. DO NOT tell the user you are "searching" or "opening a tab".
+    4. FOR WEATHER: Output EXACTLY "CMD:WEATHER [CityName]"
+    5. FOR AIR QUALITY: Output EXACTLY "CMD:AQI [CityName]"
+    6. FOR GENERAL SEARCH: If asked about a famous person, place, or fact you don't know, output EXACTLY "CMD:SEARCH [Topic]"
+    7. STRICT LANGUAGE RULE: ALWAYS speak and reply in English. ONLY switch to Hindi (using Devanagari script) IF the user EXPLICITLY commands you to (e.g., "Speak in Hindi").
+    8. NOISE CANCELLATION: If the user input is just a filler word ("so", "um", "okay", "hmm") or background noise, DO NOT reply normally. Output EXACTLY: "CMD:IGNORE"
 `;
 
         // Background Animation Script
@@ -442,6 +550,8 @@
         let isListening = false;
         let isProcessing = false;
         let isSpeaking = false;
+        let isMuted = false;
+        let activeSpeakInterval = null;
         let messages = [];
         let selectedVoice = null; 
         
@@ -470,11 +580,20 @@
         const modeStatus = document.getElementById('mode-status');
         const settingsModal = document.getElementById('settings-modal');
         const apiKeyInput = document.getElementById('api-key-input');
+        const muteBtn = document.getElementById('mute-btn');
+        const iconVolOn = document.getElementById('icon-vol-on');
+        const iconVolOff = document.getElementById('icon-vol-off');
 
         window.onload = () => {
             lucide.createIcons();
             startClock();
             startRandomStats();
+            
+            // LocalStorage se saved key nikaal rahe hain
+            const savedKey = localStorage.getItem('jarvis_groq_key');
+            if (savedKey) {
+                API_KEY = savedKey;
+            }
             apiKeyInput.value = API_KEY;
             
             for(let i=0; i<20; i++) {
@@ -493,12 +612,16 @@
         window.speechSynthesis.onvoiceschanged = () => {
             if (!selectedVoice) {
                 const voices = window.speechSynthesis.getVoices();
-                selectedVoice = voices.find(v => v.name.includes("Google UK English Male")) || 
-                                voices.find(v => v.name.includes("Microsoft David")) || 
-                                voices.find(v => v.name.toLowerCase().includes("male")) || 
-                                voices.find(v => v.name.includes("Daniel")) ||
-                                voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
-                                voices[0];
+                // STRICT MALE VOICE SELECTION (Prevents Lady Voice on Mobile)
+                selectedVoice = voices.find(v => v.name === "Daniel") || // iOS/Mac best British male
+                                voices.find(v => v.name === "Google UK English Male") || // Android/Chrome best British male
+                                voices.find(v => v.name.includes("George")) || // Windows British male
+                                voices.find(v => v.lang === "en-GB" && v.name.toLowerCase().includes("male")) || // Any British Male
+                                voices.find(v => v.name.toLowerCase().includes("male")) || // ANY Male voice (US/Aus/etc)
+                                voices.find(v => v.lang === "en-GB" && !v.name.toLowerCase().includes("female")) || // British, STRICTLY NOT female
+                                voices.find(v => v.lang.includes("en") && !v.name.toLowerCase().includes("female")) || // Any English, STRICTLY NOT female
+                                voices[0]; // Absolute fallback
+                
                 if (selectedVoice) addLog(`VOICE LOCKED: ${selectedVoice.name.substring(0, 15)}...`);
             }
         };
@@ -672,7 +795,7 @@
         async function startListening() {
             if (!API_KEY) {
                 addLog("ERROR: API KEY MISSING");
-                toggleSettings();
+                settingsModal.classList.remove('hidden');
                 return;
             }
             try {
@@ -734,6 +857,20 @@
             }
         }
 
+        // --- SMART TEXT NORMALIZER (Fixes Whisper Misspellings before processing) ---
+        function normalizeText(text) {
+            if (!text) return "";
+            let norm = text;
+            
+            // Fix "Jarvis" variations
+            norm = norm.replace(/\b(hrvs|hr was|hr is|jervis|travis|chavez|garbage)\b/gi, "Jarvis");
+            
+            // Fix "Pride" variations in context
+            norm = norm.replace(/\b(freud and|freud|bride|fried|pride and)\b/gi, "Pride");
+            
+            return norm;
+        }
+
         async function processAudio(audioBlob) {
             if (audioBlob.size < 500) {
                 if (isSessionActive) startListening();
@@ -748,21 +885,45 @@
             formData.append('model', 'whisper-large-v3-turbo');
 
             try {
-                const resp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                const resp = await fetch('https://jarvis-proxy.farazjawed5656.workers.dev/openai/v1/audio/transcriptions', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${API_KEY}` },
                     body: formData
                 });
-                const data = await resp.json();
-                if (data.error) throw new Error(data.error.message);
+                
+                const rawText = await resp.text();
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (e) {
+                    throw new Error(`Proxy response error: ${rawText.substring(0, 30)}...`);
+                }
 
-                const text = data.text;
-                if (!text || text.trim().length === 0) {
+                if (!resp.ok) {
+                    if (resp.status === 401 || (data.error && data.error.message.includes("API key"))) {
+                        settingsModal.classList.remove('hidden'); // Auto-open settings if key is invalid
+                        throw new Error("INVALID API KEY! Please update in settings.");
+                    }
+                    throw new Error(data.error?.message || `HTTP Error ${resp.status}`);
+                }
+
+                let text = data.text;
+                
+                // APPLY AUTOCORRECT FIXES HERE!
+                text = normalizeText(text);
+                
+                // --- BACKGROUND NOISE & WHISPER HALLUCINATION FILTER ---
+                const cleanedText = text.toLowerCase().replace(/[^a-z ]/g, '').trim();
+                const noiseWords = ["so", "um", "uh", "ah", "hmm", "ok", "okay", "thanks", "thank you", "thanks for watching", "subscribe"];
+                
+                if (!text || text.trim().length === 0 || cleanedText.length <= 1 || noiseWords.includes(cleanedText)) {
+                    addLog("AMBIENT NOISE IGNORED");
                     isProcessing = false;
                     updateUI();
-                    if (isSessionActive) startListening();
-                    return;
+                    if (isSessionActive) setTimeout(startListening, 500);
+                    return; // Stop here, don't call LLM
                 }
+
                 addLog(`RECOGNIZED: "${text.substring(0, 15)}..."`);
                 addTranscript('user', text);
                 await runInference(text);
@@ -779,6 +940,16 @@
         async function runInference(text) {
             addLog("PROCESSING REQUEST...");
             
+            // 1. Check Local Knowledge Base First
+            const localAnswer = getLocalAnswer(text);
+            if (localAnswer) {
+                addLog("LOCAL KNOWLEDGE MATCH");
+                addTranscript('assistant', localAnswer);
+                speak(localAnswer);
+                return; // Stop execution, skip API call
+            }
+
+            // 2. Fallback to Groq LLM API
             const apiMessages = [
                 { role: "system", content: JARVIS_SYSTEM_PROMPT },
                 ...messages.slice(-4),
@@ -786,7 +957,7 @@
             ];
             
             try {
-                const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                const resp = await fetch('https://jarvis-proxy.farazjawed5656.workers.dev/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${API_KEY}`,
@@ -800,14 +971,40 @@
                     })
                 });
                 
-                const data = await resp.json();
+                const rawText = await resp.text();
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (e) {
+                    throw new Error(`Proxy response error: ${rawText.substring(0, 30)}...`);
+                }
+
+                if (!resp.ok) {
+                    if (resp.status === 401 || (data.error && data.error.message.includes("API key"))) {
+                        settingsModal.classList.remove('hidden'); // Auto-open settings if key is invalid
+                        throw new Error("INVALID API KEY! Please update in settings.");
+                    }
+                    throw new Error(data.error?.message || `HTTP Error ${resp.status}`);
+                }
+
                 if (data.error) throw new Error(data.error.message);
                 const aiText = data.choices[0].message.content;
                 
-                // INTERCEPT COMMANDS
-                if (aiText.includes("CMD:WEATHER")) {
-                    const city = aiText.split("CMD:WEATHER")[1].trim();
+                // INTERCEPT COMMANDS (WEATHER, AQI, WEB SEARCH, IGNORE)
+                if (aiText.includes("CMD:IGNORE")) {
+                    addLog("INPUT IGNORED BY AI");
+                    isProcessing = false;
+                    updateUI();
+                    if (isSessionActive) setTimeout(startListening, 500);
+                } else if (aiText.includes("CMD:WEATHER")) {
+                    const city = aiText.split("CMD:WEATHER")[1].replace(/["'.]/g, '').trim();
                     await fetchWeather(city);
+                } else if (aiText.includes("CMD:AQI")) {
+                    const city = aiText.split("CMD:AQI")[1].replace(/["'.]/g, '').trim();
+                    await fetchAQI(city);
+                } else if (aiText.includes("CMD:SEARCH")) {
+                    const topic = aiText.split("CMD:SEARCH")[1].replace(/["'.]/g, '').trim();
+                    await fetchSearch(topic);
                 } else {
                     addTranscript('assistant', aiText);
                     addLog("REPLY GENERATED");
@@ -821,13 +1018,24 @@
             }
         }
 
+        // --- SMART CITY NORMALIZER (Fixes Narkatiaganj spelling issues) ---
+        function normalizeCity(cityName) {
+            if (!cityName) return "";
+            const lower = cityName.toLowerCase();
+            // Catch variations and whisper misspellings of Narkatiaganj
+            if (lower.includes("nargadiya") || lower.includes("narkatia") || lower.includes("narkatiya") || lower.includes("narkati") || lower.includes("nargatiya")) {
+                return "Narkatiaganj";
+            }
+            return cityName;
+        }
+
         // --- REAL WEATHER BACKEND (Client-side Fetch) ---
         async function fetchWeather(city) {
+            city = normalizeCity(city);
             addLog(`FETCHING WEATHER: ${city}`);
             addTranscript('assistant', `Accessing meteorological satellites for ${city}...`);
             
             try {
-                // 1. Geocoding
                 const geoResp = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
                 const geoData = await geoResp.json();
                 
@@ -837,8 +1045,6 @@
                 }
                 
                 const { latitude, longitude, name, admin1 } = geoData.results[0];
-                
-                // 2. Weather Data
                 const weatherResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
                 const weatherData = await weatherResp.json();
                 
@@ -856,22 +1062,123 @@
             }
         }
 
+        // --- REAL AQI BACKEND (Air Quality Index) ---
+        async function fetchAQI(city) {
+            city = normalizeCity(city);
+            addLog(`FETCHING AQI: ${city}`);
+            addTranscript('assistant', `Scanning environmental sensors for ${city}...`);
+            
+            try {
+                const geoResp = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+                const geoData = await geoResp.json();
+                
+                if (!geoData.results) {
+                    speak(`I could not locate ${city} to check air quality, Sir.`);
+                    return;
+                }
+                
+                const { latitude, longitude, name } = geoData.results[0];
+                const aqiResp = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&current=us_aqi`);
+                const aqiData = await aqiResp.json();
+                
+                const aqi = aqiData.current.us_aqi;
+                let status = "good";
+                if(aqi > 50) status = "moderate";
+                if(aqi > 100) status = "unhealthy for sensitive groups";
+                if(aqi > 150) status = "unhealthy";
+                if(aqi > 200) status = "very unhealthy";
+                if(aqi > 300) status = "hazardous";
+                
+                const responseText = `The current Air Quality Index in ${name} is ${aqi}, which is considered ${status}, Sir.`;
+                
+                addTranscript('assistant', responseText);
+                speak(responseText);
+                
+            } catch (err) {
+                console.error(err);
+                speak("I encountered an error accessing the environmental grid, Sir.");
+            }
+        }
+
+        // --- REAL WEB SEARCH BACKEND (Wikipedia API) ---
+        async function fetchSearch(topic) {
+            addLog(`SEARCHING WEB: ${topic}`);
+            addTranscript('assistant', `Searching the global database for ${topic}...`);
+            
+            try {
+                const resp = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
+                if (resp.status === 404) {
+                    speak(`I couldn't find specific real-time information on ${topic}, Sir. Please try being more specific.`);
+                    return;
+                }
+                const data = await resp.json();
+                if (data.extract) {
+                    // Extract only the first 2 sentences so Jarvis doesn't talk forever
+                    const summary = data.extract.split('. ').slice(0, 2).join('. ') + '.';
+                    addTranscript('assistant', summary);
+                    speak(summary);
+                } else {
+                    speak(`I found a match for ${topic}, but the data is incomplete, Sir.`);
+                }
+            } catch (err) {
+                console.error(err);
+                speak("I encountered an error while accessing the global database, Sir.");
+            }
+        }
+
         function speak(text) {
             isProcessing = false;
+
+            if (isMuted) {
+                addLog("RESPONSE READY (MUTED)");
+                updateUI();
+                if (isSessionActive) setTimeout(startListening, 500);
+                return;
+            }
+
             isSpeaking = true;
             updateUI();
             addLog("SPEAKING...");
 
-            const speechText = text.replace(/SEARCHING:.*?\./i, "Initiating search protocol.").replace(/CMD:WEATHER/g, "");
+            const speechText = text.replace(/SEARCHING:.*?\./i, "Initiating search protocol.").replace(/CMD:WEATHER/g, "").replace(/CMD:AQI/g, "").replace(/CMD:SEARCH/g, "");
             const utterance = new SpeechSynthesisUtterance(speechText);
-            utterance.rate = 0.9;
-            utterance.pitch = 0.7;
+            
+            // Check if text contains Devanagari (Hindi) characters
+            const isHindi = /[\u0900-\u097F]/.test(speechText);
 
-            if (selectedVoice) {
-                utterance.voice = selectedVoice;
+            if (isHindi) {
+                addLog("HINDI SCRIPT DETECTED");
+                const voices = window.speechSynthesis.getVoices();
+                
+                // STRICT HINDI MALE VOICE SELECTION
+                const hindiVoice = voices.find(v => v.lang.includes("hi-IN") && v.name.toLowerCase().includes("male")) || 
+                                   voices.find(v => v.name.includes("Rishi")) || // Apple Hindi Male
+                                   voices.find(v => v.name.includes("Hemant")) || // Windows Hindi Male
+                                   voices.find(v => v.name.includes("Madhur")) || // Other Hindi Male
+                                   voices.find(v => v.lang.includes("hi-IN") && 
+                                                    !v.name.toLowerCase().includes("female") && 
+                                                    !v.name.toLowerCase().includes("lekha") && 
+                                                    !v.name.toLowerCase().includes("kalpana") && 
+                                                    !v.name.toLowerCase().includes("aditi")) ||
+                                   voices.find(v => v.lang.includes("hi-IN")) || // Fallback
+                                   voices.find(v => v.lang.includes("hi"));
+                
+                if (hindiVoice) {
+                    utterance.voice = hindiVoice;
+                }
+                // Normal speed for Hindi so it sounds natural
+                utterance.rate = 1.0; 
+                utterance.pitch = 0.9;
+            } else {
+                // J.A.R.V.I.S. Default English Profile
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+                utterance.rate = 1.05; 
+                utterance.pitch = 0.9; 
             }
 
-            const speakInterval = setInterval(() => {
+            activeSpeakInterval = setInterval(() => {
                 const bars = document.querySelectorAll('.visualizer-bar');
                 bars.forEach(bar => {
                     const h = Math.random() * 20 + 4;
@@ -880,8 +1187,9 @@
             }, 100);
 
             utterance.onend = () => {
+                if (!isSpeaking) return; // Prevent double trigger if muted during speech
                 isSpeaking = false;
-                clearInterval(speakInterval);
+                clearInterval(activeSpeakInterval);
                 addLog("WAITING FOR INPUT");
                 updateUI();
                 document.querySelectorAll('.visualizer-bar').forEach(b => b.style.height = '4px');
@@ -905,6 +1213,29 @@
             } else {
                 isSessionActive = true;
                 startListening();
+            }
+        };
+
+        muteBtn.onclick = () => {
+            isMuted = !isMuted;
+            if (isMuted) {
+                iconVolOn.classList.add('hidden');
+                iconVolOff.classList.remove('hidden');
+                window.speechSynthesis.cancel();
+                if (isSpeaking) {
+                    isSpeaking = false;
+                    clearInterval(activeSpeakInterval);
+                    document.querySelectorAll('.visualizer-bar').forEach(b => b.style.height = '4px');
+                    addLog("AUDIO OUTPUT MUTED");
+                    updateUI();
+                    if (isSessionActive) setTimeout(startListening, 500);
+                } else {
+                    addLog("AUDIO OUTPUT MUTED");
+                }
+            } else {
+                iconVolOn.classList.remove('hidden');
+                iconVolOff.classList.add('hidden');
+                addLog("AUDIO OUTPUT UNMUTED");
             }
         };
 
